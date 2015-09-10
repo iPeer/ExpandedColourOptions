@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ExpandedColourOptions
@@ -24,7 +23,8 @@ namespace ExpandedColourOptions
             _buttonStyle,
             _labelStyle,
             _toggleStyle,
-            _textFieldStyle;
+            _textFieldStyle,
+            _labelStyleRichText;
 
         [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Advanced Colour Options")]
         public void showGUI()
@@ -165,21 +165,25 @@ namespace ExpandedColourOptions
                 hasSetupStyles = true;
                 _winStyle = new GUIStyle(skin.window);
                 _winStyle.fixedWidth = 300f;
-                _winStyle.fixedHeight = 300f;
                 _winStyle.stretchHeight = _winStyle.stretchWidth = true;
 
                 _labelStyle = new GUIStyle(skin.label);
                 _labelStyle.stretchWidth = true;
+
+                _labelStyleRichText = new GUIStyle(skin.label);
+                _labelStyleRichText.stretchWidth = true;
+                _labelStyleRichText.richText = true;
 
                 _toggleStyle = new GUIStyle(skin.toggle);
 
                 _buttonStyle = new GUIStyle(skin.button);
 
                 _textFieldStyle = new GUIStyle(skin.textField);
+                _textFieldStyle.wordWrap = false;
 
 
             }
-            _winPos = GUILayout.Window(+this.part.GetInstanceID(), _winPos, OnWindow, "Advanced Colour Options", _winStyle);
+            _winPos = GUILayout.Window(+this.part.GetInstanceID(), _winPos, OnWindow, "Advanced Colour Options", _winStyle, GUILayout.MinHeight(300f));
         }
 
         public void OnWindow(int id)
@@ -187,15 +191,19 @@ namespace ExpandedColourOptions
             //Debug.Log("ONWINDOW");
             GUILayout.BeginVertical();
             //Debug.Log("After Vert");
-            if (Event.current.isKey)
+            if (Event.current.isKey && Event.current.type == EventType.KeyDown)
             {
                 if (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter)
                 {
-                    Event.current.Use(); // Stop the GUI from "reading" this input
+                    Event.current.Use();
+                    hexColour = hexColour.Replace(Environment.NewLine, "");
+                    rByte = rByte.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r","");
+                    gByte = gByte.Replace(Environment.NewLine, "");
+                    bByte = bByte.Replace(Environment.NewLine, "");
                     if (hexInput)
                     {
-                        if (!hexColour.StartsWith("#"))
-                            hexColour = "#" + hexColour;
+                        /*if (!hexColour.StartsWith("#"))
+                            hexColour = "#" + hexColour;*/
                         updatePreviewFromHexColour(hexColour);
                         Color c1 = getColourFromHex(hexColour);
                         Color32 c = getColourRGBUnity(c1.r, c1.g, c1.b);
@@ -224,11 +232,11 @@ namespace ExpandedColourOptions
 
 
                 GUILayout.Label("R:", _labelStyle);
-                rByte = GUILayout.TextField(rByte, 3, _textFieldStyle, GUILayout.MinWidth(40f));
+                rByte = GUILayout.TextField(rByte, 3, _textFieldStyle, GUILayout.MinWidth(40f)).Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
                 GUILayout.Label("G:", _labelStyle);
-                gByte = GUILayout.TextField(gByte, 3, _textFieldStyle, GUILayout.MinWidth(40f));
+                gByte = GUILayout.TextField(gByte, 3, _textFieldStyle, GUILayout.MinWidth(40f)).Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
                 GUILayout.Label("B:", _labelStyle);
-                bByte = GUILayout.TextField(bByte, 3, _textFieldStyle, GUILayout.MinWidth(40f));
+                bByte = GUILayout.TextField(bByte, 3, _textFieldStyle, GUILayout.MinWidth(40f)).Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
 
 
                 GUILayout.EndHorizontal();
@@ -239,17 +247,19 @@ namespace ExpandedColourOptions
 
 
                 GUILayout.Label("Hex input:");
-                hexColour = GUILayout.TextField(hexColour, 7, _textFieldStyle, GUILayout.MinWidth(60f));
+                hexColour = GUILayout.TextField(hexColour.Replace("#", ""), 6, _textFieldStyle, GUILayout.MinWidth(60f)).Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
 
 
                 GUILayout.EndHorizontal();
             }
             GUILayout.Label("Press ENTER to confirm your entry!", _labelStyle, GUILayout.ExpandWidth(true));
             GUILayout.Space(5);
-            GUILayout.Label(previewTexture, _labelStyle, GUILayout.MinWidth(100f), GUILayout.MinHeight(50f));
+            GUILayout.Label(previewTexture, _labelStyle, GUILayout.MinWidth(100f), GUILayout.MinHeight(50f), GUILayout.ExpandWidth(true));
             GUILayout.Label("NOTE: Preview may not match actual light colour exactly!", _labelStyle, GUILayout.ExpandWidth(true));
             GUILayout.Space(5);
             applyToSymmetry = GUILayout.Toggle(applyToSymmetry, "Apply to all symmetry counterparts", _toggleStyle, GUILayout.ExpandWidth(true));
+            GUILayout.Space(5);
+            GUILayout.Label("Please note that because KSP uses floats for its colours, conversion may not be 100% accurate. <color=red>#BADA55</color> may become <color=red>#BADA54</color> for exmaple.", _labelStyleRichText);
             GUILayout.BeginHorizontal();
 
             if (GUILayout.Button("Apply", _buttonStyle, GUILayout.ExpandWidth(true)))
